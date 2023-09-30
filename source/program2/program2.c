@@ -15,53 +15,53 @@ MODULE_LICENSE("GPL");
 /* for kthread_create */
 static struct task_struct *task;
 
-
 /* for do_wait parameters usage */
-struct wait_opts
-{
-	enum pid_type wo_type;
-	int wo_flags;
-	struct pid *wo_pid;
-	struct siginfo __user *wo_info;
-	int __user *wo_stat;
-	struct rusage __user *wo_rusage;
-	wait_queue_t child_wait;
-	int notask_error;
-};
+// struct wait_opts
+// {
+// 	enum pid_type wo_type;
+// 	int wo_flags;
+// 	struct pid *wo_pid;
+// 	struct siginfo __user *wo_info;
+// 	int __user *wo_stat;
+// 	struct rusage __user *wo_rusage;
+// 	wait_queue_t child_wait;
+// 	int notask_error;
+// };
 
 /* for kernel_clone parameters usage */
-struct kernel_clone_args
-{
-	u64 flags;
-	int __user *pidfd;
-	int __user *child_tid;
-	int __user *parent_tid;
-	int exit_signal;
-	unsigned long stack;
-	unsigned long stack_size;
-	unsigned long tls;
-	pid_t *set_tid;
-	/* Number of elements in *set_tid */
-	size_t set_tid_size;
-	int cgroup;
-	int io_thread;
-	struct cgroup *cgrp;
-	struct css_set *cset;
-};
+// struct kernel_clone_args
+// {
+// 	u64 flags;
+// 	int __user *pidfd;
+// 	int __user *child_tid;
+// 	int __user *parent_tid;
+// 	int exit_signal;
+// 	unsigned long stack;
+// 	unsigned long stack_size;
+// 	unsigned long tls;
+// 	pid_t *set_tid;
+// 	/* Number of elements in *set_tid */
+// 	size_t set_tid_size;
+// 	int cgroup;
+// 	int io_thread;
+// 	struct cgroup *cgrp;
+// 	struct css_set *cset;
+// };
 
-extern pid_t kernel_clone(struct kernel_clone_args *args);
+// extern pid_t kernel_clone(struct kernel_clone_args *args);
 
-extern int do_execve(struct filename *filename,
-					 const char __user *const __user *__argv,
-					 const char __user *const __user *__envp);
+// extern int do_execve(struct filename *filename,
+// 					 const char __user *const __user *__argv,
+// 					 const char __user *const __user *__envp);
 
-extern struct filename *getname(const char __user *filename);
+// extern struct filename *getname(const char __user *filename);
 
-extern long do_wait(struct wait_opts *wo);
+// extern long do_wait(struct wait_opts *wo);
 
 // implement fork function
 int my_fork(void *argc)
 {
+	int pid;
 
 	// set default sigaction for current process
 	int i;
@@ -76,6 +76,9 @@ int my_fork(void *argc)
 	}
 
 	/* fork a process using kernel_clone or kernel_thread */
+	// pid = kernel_clone(??);
+	printk("[program2] : The child process has pid = %d\n", pid);
+	printk("[program2] : This is the parent process, pid = %d\n", (int)current->pid);
 
 	/* execute a test program in child process */
 
@@ -91,11 +94,14 @@ static int __init program2_init(void)
 
 	/* create a kernel thread to run my_fork */
 	printk("[program2] : module_init create kthread start");
-	task = kthread_create();
+	task = kthread_create(&my_fork, NULL, "MyThread");
 
 	/* wake up new thread if ok */
-	if ()
-
+	if (!IS_ERR(task))
+	{
+		printk("[program2] : module_init kthread start\n");
+		wake_up_process(task);
+	}
 
 	return 0;
 }
