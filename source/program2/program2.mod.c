@@ -28,12 +28,16 @@ __used __section("__versions") = {
 	{ 0x182197f3, "module_layout" },
 	{ 0xd9f448da, "wake_up_process" },
 	{ 0x9fc1fb2a, "kthread_create_on_node" },
-	{ 0xc5850110, "printk" },
 	{ 0x8b20bbb5, "kernel_clone" },
 	{ 0x38c58832, "current_task" },
+	{ 0xa7b54a17, "put_pid" },
+	{ 0xf37409c9, "do_wait" },
+	{ 0xc48f123f, "find_get_pid" },
 	{ 0xc959d152, "__stack_chk_fail" },
+	{ 0x952664c5, "do_exit" },
 	{ 0x5b8239ca, "__x86_return_thunk" },
 	{ 0x2d15d1b6, "do_execve" },
+	{ 0xc5850110, "printk" },
 	{ 0x85416d23, "getname_kernel" },
 	{ 0xbdfb6dbb, "__fentry__" },
 };
@@ -41,4 +45,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "231E813952548C2834167C4");
+MODULE_INFO(srcversion, "975C0B1D770D93220F482F0");
