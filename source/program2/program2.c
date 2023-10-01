@@ -16,47 +16,45 @@ MODULE_LICENSE("GPL");
 static struct task_struct *task;
 
 /* for do_wait parameters usage */
-// struct wait_opts
-// {
-// 	enum pid_type wo_type;
-// 	int wo_flags;
-// 	struct pid *wo_pid;
-// 	struct siginfo __user *wo_info;
-// 	int __user *wo_stat;
-// 	struct rusage __user *wo_rusage;
-// 	wait_queue_t child_wait;
-// 	int notask_error;
-// };
+struct wait_opts
+{
+	enum pid_type wo_type;
+	int wo_flags;
+	struct pid *wo_pid;
 
-/* for kernel_clone parameters usage */
-// struct kernel_clone_args
-// {
-// 	u64 flags;
-// 	int __user *pidfd;
-// 	int __user *child_tid;
-// 	int __user *parent_tid;
-// 	int exit_signal;
-// 	unsigned long stack;
-// 	unsigned long stack_size;
-// 	unsigned long tls;
-// 	pid_t *set_tid;
-// 	/* Number of elements in *set_tid */
-// 	size_t set_tid_size;
-// 	int cgroup;
-// 	int io_thread;
-// 	struct cgroup *cgrp;
-// 	struct css_set *cset;
-// };
+	struct waitid_info *wo_info;
+	int wo_stat;
+	struct rusage *wo_rusage;
 
-// extern pid_t kernel_clone(struct kernel_clone_args *args);
+	wait_queue_entry_t child_wait;
+	int notask_error;
+};
 
-// extern int do_execve(struct filename *filename,
-// 					 const char __user *const __user *__argv,
-// 					 const char __user *const __user *__envp);
+extern pid_t kernel_clone(struct kernel_clone_args *args);
 
-// extern struct filename *getname(const char __user *filename);
+extern int do_execve(struct filename *filename,
+					 const char __user *const __user *__argv,
+					 const char __user *const __user *__envp);
 
-// extern long do_wait(struct wait_opts *wo);
+extern struct filename *getname_kernel(const char *filename);
+
+extern long do_wait(struct wait_opts *wo);
+
+// to texecute the test program
+// in addition, the parent process wait
+int my_execve(void)
+{
+	int exe_res;
+	const char path[] = "/tmp/test";
+
+	struct filename *file_name = getname_kernel(path);
+
+	/* execute a test program in child process */
+	printk("child process\n");
+	exe_res = do_execve(file_name, NULL, NULL);
+
+	return exe_res;
+}
 
 // implement fork function
 int my_fork(void *argc)
@@ -75,15 +73,53 @@ int my_fork(void *argc)
 		k_action++;
 	}
 
+	/* for kernel_clone parameter usage */
+	struct kernel_clone_args clone_args = {
+		.flags = ((lower_32_bits(SIGCHLD) | CLONE_VM | CLONE_UNTRACED) & ~CSIGNAL),
+		// A series of flag bits can be set through the flags parameter.
+		// For example, CLONE_VM indicates the shared process address space,
+		// CLONE_UNTRACED indicates that there is no need to track the child process,
+		// and CSIGNAL indicates the signal when the child process exits.
+		.pidfd = NULL,		// pidfd is a flag used to indicate whether to create a pidfd file descriptor when cloning a new process
+		.child_tid = NULL,	// used for clone() to point to user space mem. in child process address space
+		.parent_tid = NULL, // usef for clone() to point to user space mem. in parent process address
+		.exit_signal = (lower_32_bits(SIGCHLD) & CSIGNAL),
+		.stack = (unsigned long)&my_execve, // the location of the functio to execute
+		.stack_size = 0,					// normally set as 0 because it is unused
+		.tls = 0
+		// tls stands for Thread Local Storage, which is a
+		// thread-private memory area used to store thread-specific variables.
+		/* other paramters or struct no need to set */
+	};
+
 	/* fork a process using kernel_clone or kernel_thread */
-	// pid = kernel_clone(??);
+	pid = kernel_clone(&clone_args);
 	printk("[program2] : The child process has pid = %d\n", pid);
 	printk("[program2] : This is the parent process, pid = %d\n", (int)current->pid);
 
-	/* execute a test program in child process */
+	/* wait_opts paramters */
+	int status;
+
+	/* wait_opts settings */
+	struct wait_opts do_wo = {
+		.wo_type = PIDTYPE_PGID,
+		.wo_flags = WNOHANG,
+		.wo_pid = pid,
+		.wo_info = NULL,
+		.wo_stat = status,
+		.wo_rusage = NULL,
+		.notask_error = 0
+	};
 
 	/* wait until child process terminates */
+	do_wait(&do_wo);
 
+	/* output signal information */
+
+	
+
+
+	do_exit(0);
 	return 0;
 }
 
@@ -92,7 +128,7 @@ static int __init program2_init(void)
 
 	printk("[program2] : module_init\n");
 
-	/* create a kernel thread to run my_fork */
+	// /* create a kernel thread to run my_fork */
 	printk("[program2] : module_init create kthread start");
 	task = kthread_create(&my_fork, NULL, "MyThread");
 
