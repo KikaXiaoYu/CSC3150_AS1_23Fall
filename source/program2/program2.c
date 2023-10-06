@@ -31,33 +31,29 @@ struct wait_opts
 
 /* exported functions from kernel */
 extern pid_t kernel_clone(struct kernel_clone_args *args);
-
 extern int do_execve(struct filename *filename,
 					 const char __user *const __user *__argv,
 					 const char __user *const __user *__envp);
-
 extern struct filename *getname_kernel(const char *filename);
-
 extern long do_wait(struct wait_opts *wo);
 
-// to texecute the test program
+/* func declaration */
+int my_execve(void);
+int my_fork(void *argc);
+
+/* execute the test program */
 int my_execve(void)
 {
 	int exe_res;
-	const char path[] = "/tmp/test";;
+	// const char path[] = "/home/vagrant/csc3150/Assignment_1_121090642/source/program2/test";
+	const char path[] = "/tmp/test";
 
 	struct filename *file_name = getname_kernel(path);
 
 	/* execute a test program in child process */
 	exe_res = do_execve(file_name, NULL, NULL);
 
-	// return 0;
-
-	if (exe_res == 0) // execute properly
-	{
-		return 0;
-	}
-	do_exit(exe_res); // forcely exit process if not proper
+	return 0;
 }
 
 // implement fork function
@@ -86,9 +82,9 @@ int my_fork(void *argc)
 		// and CSIGNAL indicates the signal when the child process exits.
 		.pidfd = NULL,		// pidfd is a flag used to indicate whether to create a pidfd file descriptor when cloning a new process
 		.child_tid = NULL,	// used for clone() to point to user space mem. in child process address space
-		.parent_tid = NULL, // usef for clone() to point to user space mem. in parent process address
+		.parent_tid = NULL, // used for clone() to point to user space mem. in parent process address
 		.exit_signal = (lower_32_bits(SIGCHLD) & CSIGNAL),
-		.stack = (unsigned long)&my_execve, // the location of the functio to execute
+		.stack = (unsigned long)&my_execve, // the location of the function to execute
 		.stack_size = 0,					// normally set as 0 because it is unused
 		.tls = 0
 		// tls stands for Thread Local Storage, which is a
@@ -104,19 +100,26 @@ int my_fork(void *argc)
 	/* wait_opts paramters */
 	int status;
 
+	struct pid *wo_pid = NULL;
+	wo_pid = find_get_pid(pid);
+
 	/* wait_opts settings */
 	struct wait_opts do_wo = {
 		.wo_type = PIDTYPE_PID,
 		.wo_flags = WEXITED | WUNTRACED,
-		.wo_pid = find_get_pid(pid),
+		.wo_pid = wo_pid,
 		.wo_info = NULL,
-		.wo_stat = status,
+		.wo_stat = (int __user *)&status,
 		.wo_rusage = NULL,
 	};
 
 	/* wait until child process terminates */
 	printk("[program2] : child process\n");
-	do_wait(&do_wo);
+
+	int a;
+	a = do_wait(&do_wo);
+
+	put_pid(wo_pid);
 
 	status = do_wo.wo_stat; // get the status
 
@@ -134,18 +137,18 @@ int my_fork(void *argc)
 
 	switch (signal)
 	{
-	case 0:
+	case 0: // normal
 		printk("[program2] : Normal termination with EXIT STATUS = 0\n");
 		break;
-	case 127:
+	case 127: // stop
 		printk("[program2] : child process get stop signal\n");
 		break;
-	default:
+	default: // others
 		printk("[program2] : get %s signal\n", signal_array[signal]);
 		break;
 	}
 
-	// /* stopped or terminated */
+	/* stopped or terminated */
 	if (signal == 17 || signal == 19 || signal == 127)
 	{
 		printk("[program2] : child process stopped\n");
@@ -155,6 +158,7 @@ int my_fork(void *argc)
 		printk("[program2] : child process terminated\n");
 	}
 
+	printk("[program2] : The return status is %d\n", status);
 	printk("[program2] : The return signal is %d\n", signal);
 
 	return 0;
@@ -166,9 +170,9 @@ static int __init program2_init(void)
 
 	printk("[program2] : module_init\n");
 
-	// /* create a kernel thread to run my_fork */
+	/* create a kernel thread to run my_fork */
 	printk("[program2] : module_init create kthread start\n");
-	task = kthread_create(&my_fork, NULL, "MyThread");
+	task = kthread_create(&my_fork, NULL, "ZiyuThread");
 
 	/* wake up new thread if ok */
 	if (!IS_ERR(task))
