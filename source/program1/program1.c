@@ -50,57 +50,38 @@ int main(int argc, char *argv[])
 			waitpid(pid, &status, WUNTRACED);
 			printf("Parent process receives SIGCHLD signal\n");
 
-			/* check child process'  termination status */
-			switch (status)
+			/* check child process' termination status and signal */
+			int signal = status & 0x7F; // get signal from lowest 7 bits
+
+			char signal_array[32][15] = {
+				"normal", "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL",
+				"SIGTRAP", "SIGABRT", "SIGBUS", "SIGFPE", "SIGKILL",
+				"SIGUSR1", "SIGSEGV", "SIGUSR2", "SIGPIPE", "SIGALRM",
+				"SIGTERM", "unused", "SIGCHLD", "SIGCONT", "SIGSTOP",
+				"SIGTSTP", "SIGTTIN", "SIGTTOU", "SIGURG", "SIGXCPU",
+				"SIGXFSG", "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGIO",
+				"SIGPWR", "SIGSYS"};
+
+			switch (signal)
 			{
 			case 0:
 				printf("Normal termination with EXIT STATUS = 0\n");
 				break;
-			case 134:
-				printf("child process get SIGABRT signal\n");
-				break;
-			case 14:
-				printf("child process get SIGALRM signal\n");
-				break;
-			case 135:
-				printf("child process get SIGBUS signal\n");
-				break;
-			case 136:
-				printf("child process get SIGFPE signal\n");
-				break;
-			case 1:
-				printf("child process get SIGHUP signal\n");
-				break;
-			case 132:
-				printf("child process get SIGILL signal\n");
-				break;
-			case 2:
-				printf("child process get SIGINT signal\n");
-				break;
-			case 9:
-				printf("child process get SIGKILL signal\n");
-				break;
-			case 13:
-				printf("child process get SIGPIPE signal\n");
-				break;
-			case 131:
-				printf("child process get SIGQUIT signal\n");
-				break;
-			case 139:
-				printf("child process get SIGSEGV signal\n");
-				break;
-			case 15:
-				printf("child process get SIGTERM signal\n");
-				break;
-			case 133:
-				printf("child process get SIGTRAP signal\n");
-				break;
-			case 4991:
-				printf("child process get SIGSTOP signal\n");
+			case 127:
+				printf("child process get stop signal\n");
 				break;
 			default:
-				printf("child process get the signal with status = %d\n", status);
+				printf("child process get %s signal\n", signal_array[signal]);
 				break;
+			}
+
+			if (signal == 17 || signal == 19 || signal == 127)
+			{
+				printf("child process stopped\n");
+			}
+			else if (signal != 0)
+			{
+				printf("child process terminated by %s signal with signal = %d\n", signal_array[signal], signal);
 			}
 		}
 	}

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.m": "matlab",
+        "wait.h": "c",
+        "sched.h": "c"
+    }
+}
