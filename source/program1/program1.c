@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 
 			/* check child process' termination status and signal */
 			int signal = status & 0x7F; // get signal from lowest 7 bits
+			int stop_spec = (((unsigned)status) >> 8);
 
 			char signal_array[32][15] = {
 				"normal", "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL",
@@ -64,10 +65,10 @@ int main(int argc, char *argv[])
 
 			switch (signal)
 			{
-			case 0:
+			case 0: // normal termination
 				printf("Normal termination with EXIT STATUS = 0\n");
 				break;
-			case 127:
+			case 127: // stop
 				printf("child process get stop signal\n");
 				break;
 			default:
@@ -75,9 +76,9 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			if (signal == 17 || signal == 19 || signal == 127)
+			if (signal == 127)
 			{
-				printf("child process stopped\n");
+				printf("child process stopped with signal = %d\n", stop_spec);
 			}
 			else if (signal != 0)
 			{

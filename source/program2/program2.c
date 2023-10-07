@@ -45,8 +45,8 @@ int my_fork(void *argc);
 int my_execve(void)
 {
 	int exe_res;
-	// const char path[] = "/home/vagrant/csc3150/Assignment_1_121090642/source/program2/test";
-	const char path[] = "/tmp/test";
+	const char path[] = "/home/vagrant/csc3150/Assignment_1_121090642/source/program2/test";
+	// const char path[] = "/tmp/test";
 
 	struct filename *file_name = getname_kernel(path);
 
@@ -123,9 +123,10 @@ int my_fork(void *argc)
 
 	status = do_wo.wo_stat; // get the status
 
-	int signal = status & 0x7f; // to do WTERMSIG
+	/* check child process' termination status and signal */
+	int signal = status & 0x7F; // get signal from lowest 7 bits
+	int stop_spec = (((unsigned)status) >> 8);
 
-	/* output signal information */
 	char signal_array[32][15] = {
 		"normal", "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL",
 		"SIGTRAP", "SIGABRT", "SIGBUS", "SIGFPE", "SIGKILL",
@@ -137,29 +138,40 @@ int my_fork(void *argc)
 
 	switch (signal)
 	{
-	case 0: // normal
+	case 0: // normal termination
 		printk("[program2] : Normal termination with EXIT STATUS = 0\n");
 		break;
 	case 127: // stop
-		printk("[program2] : child process get stop signal\n");
+		printk("[program2] : get stop signal\n");
 		break;
-	default: // others
+	default:
 		printk("[program2] : get %s signal\n", signal_array[signal]);
 		break;
 	}
 
-	/* stopped or terminated */
-	if (signal == 17 || signal == 19 || signal == 127)
+	if (signal == 127)
 	{
 		printk("[program2] : child process stopped\n");
+	}
+	else if (signal == 18)
+	{
+		printk("[program2] : child process continued\n");
 	}
 	else if (signal != 0)
 	{
 		printk("[program2] : child process terminated\n");
 	}
 
+	if (signal == 127)
+	{
+		printk("[program2] : The return signal is %d\n", stop_spec);
+	}
+	else if (signal != 0)
+	{
+		printk("[program2] : The return signal is %d\n", signal);
+	}
+
 	printk("[program2] : The return status is %d\n", status);
-	printk("[program2] : The return signal is %d\n", signal);
 
 	return 0;
 	do_exit(0);
