@@ -63,26 +63,33 @@ int main(int argc, char *argv[])
 				"SIGXFSG", "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGIO",
 				"SIGPWR", "SIGSYS"};
 
-			switch (signal)
+			if (status == 0xFFFF) // continue
 			{
-			case 0: // normal termination
-				printf("Normal termination with EXIT STATUS = 0\n");
-				break;
-			case 127: // stop
-				printf("child process get stop signal\n");
-				break;
-			default:
-				printf("child process get %s signal\n", signal_array[signal]);
-				break;
+				printf("child process continued\n");
 			}
+			else
+			{
+				switch (signal)
+				{
+				case 0: // normal termination
+					printf("Normal termination with EXIT STATUS = %d\n", stop_spec);
+					break;
+				case 127: // stop
+					printf("child process get stop signal\n");
+					break;
+				default:
+					printf("child process get %s signal\n", signal_array[signal]);
+					break;
+				}
 
-			if (signal == 127)
-			{
-				printf("child process stopped with signal = %d\n", stop_spec);
-			}
-			else if (signal != 0)
-			{
-				printf("child process terminated by %s signal with signal = %d\n", signal_array[signal], signal);
+				if (signal == 127)
+				{
+					printf("child process stopped with signal = %d\n", stop_spec);
+				}
+				else if (signal != 0)
+				{
+					printf("child process terminated by %s signal with signal = %d\n", signal_array[signal], signal);
+				}
 			}
 		}
 	}

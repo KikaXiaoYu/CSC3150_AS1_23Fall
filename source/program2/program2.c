@@ -45,8 +45,8 @@ int my_fork(void *argc);
 int my_execve(void)
 {
 	int exe_res;
-	const char path[] = "/home/vagrant/csc3150/Assignment_1_121090642/source/program2/test";
-	// const char path[] = "/tmp/test";
+	// const char path[] = "/home/vagrant/csc3150/Assignment_1_121090642/source/program2/test";
+	const char path[] = "/tmp/test";
 
 	struct filename *file_name = getname_kernel(path);
 
@@ -136,43 +136,45 @@ int my_fork(void *argc)
 		"SIGXFSG", "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGIO",
 		"SIGPWR", "SIGSYS"};
 
-	switch (signal)
-	{
-	case 0: // normal termination
-		printk("[program2] : Normal termination with EXIT STATUS = 0\n");
-		break;
-	case 127: // stop
-		printk("[program2] : get stop signal\n");
-		break;
-	default:
-		printk("[program2] : get %s signal\n", signal_array[signal]);
-		break;
-	}
-
-	if (signal == 127)
-	{
-		printk("[program2] : child process stopped\n");
-	}
-	else if (signal == 18)
+	if (status == 0xFFFF) // continued
 	{
 		printk("[program2] : child process continued\n");
 	}
-	else if (signal != 0)
+	else // other conditons
 	{
-		printk("[program2] : child process terminated\n");
-	}
+		switch (signal)
+		{
+		case 0: // normal termination
+			printk("[program2] : Normal termination with EXIT STATUS = %d\n", stop_spec);
+			break;
+		case 127: // stop
+			printk("[program2] : get stop signal\n");
+			break;
+		default: // others
+			printk("[program2] : get %s signal\n", signal_array[signal]);
+			break;
+		}
 
-	if (signal == 127)
-	{
-		printk("[program2] : The return signal is %d\n", stop_spec);
-	}
-	else if (signal != 0)
-	{
-		printk("[program2] : The return signal is %d\n", signal);
-	}
+		if (signal == 127) // stop
+		{
+			printk("[program2] : child process stopped\n");
+		}
+		else if (signal != 0) // terminate
+		{
+			printk("[program2] : child process terminated\n");
+		}
 
-	printk("[program2] : The return status is %d\n", status);
+		if (signal == 127) // stop
+		{
+			printk("[program2] : The return signal is %d\n", stop_spec);
+		}
+		else if (signal != 0) // terminate
+		{
+			printk("[program2] : The return signal is %d\n", signal);
+		}
 
+		printk("[program2] : The return status is %d\n", status);
+	}
 	return 0;
 	do_exit(0);
 }
